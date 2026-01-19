@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <meta charset="UTF-8" />
   <title>Cadastro de Vendas</title>
   <style>
@@ -69,11 +71,6 @@
   <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" alt="Logo da Empresa" style="max-height:140px; margin:10px auto; display:block;" />
 </div>
 
-  <div>
-    <img id="logoPreview" />
-  </div>
-</div>
-
 <div class="box">
   <h2>Cliente</h2>
   <label>Nome <input id="nome" /></label>
@@ -140,16 +137,21 @@
       </tr>
     </thead>
     <tbody id="lista"></tbody>
-  </table>
+  
+</table>
 
-  <p class="total">Valor Total: R$ <span id="valorTotal">0.00</span></p>
+<p class="total">Entrada: R$ <span id="entradaResumo">0.00</span></p>
+<p class="total">Valor Total: R$ <span id="valorTotal">0.00</span></p>
+<p class="total">Parcelamento: <span id="valorParcelas">1x de R$ 0.00</span></p>
 </div>
 
 <div class="box">
   <h2>Pagamento</h2>
   <label>Entrada <input id="entrada" type="number" value="0" /></label>
   <label>Parcelas <input id="parcelas" type="number" value="1" /></label>
-  <label>Vencimento <input id="vencimento" type="date" /></label>
+  <label>Dia do Vencimento
+  <input id="vencimento" type="number" min="1" max="31" placeholder="Ex: 25" />
+</label>
   <label>Forma de Pagamento
     <select id="forma">
       <option value="avista">À vista</option>
@@ -162,23 +164,23 @@
 
 <div class="box" style="text-align:center;">
   <button onclick="enviarWebhook()">📤 Enviar para o Sistema</button>
-  <button onclick="window.print()">🖨️ Imprimir Comprovante</button>
+  <button onclick="gerarPDF()">📄 Gerar PDF</button>
 </div>
+
+<div id="resumoPrint" style="background:white;color:black;padding:20px;display:none"></div>
 
 <script>
 let total = 0;
 
 const WEBHOOK_URL = "https://n8n.vps6993.panel.icontainer.net/webhook/MEIRELLES";
 
-
-
 function adicionarProduto(){
   const select = document.getElementById('produto');
-  const nome = select.value;
+  const nome = select.options[select.selectedIndex].text;
   const preco = Number(select.options[select.selectedIndex].dataset.preco);
   const qtd = Number(document.getElementById('quantidade').value);
 
-  if(!nome) return alert('Selecione um produto');
+  if(!preco) return alert('Selecione um produto');
 
   const subtotal = preco * qtd;
   total += subtotal;
@@ -189,11 +191,14 @@ function adicionarProduto(){
     <td>${qtd}</td>
     <td>R$ ${preco}</td>
     <td>R$ ${subtotal}</td>
-    <td><button onclick=\"remover(this, ${subtotal})\">X</button></td>
+    <td><button onclick="remover(this, ${subtotal})">X</button></td>
   `;
 
   document.getElementById('lista').appendChild(tr);
   atualizarTotal();
+
+  document.getElementById('quantidade').value = 1;
+  document.getElementById('produto').selectedIndex = 0;
 }
 
 function remover(btn, valor){
@@ -204,14 +209,29 @@ function remover(btn, valor){
 
 function atualizarTotal(){
   const entrada = Number(document.getElementById('entrada').value || 0);
-  const liquido = total - entrada;
+  let parcelas = Number(document.getElementById('parcelas').value || 1);
+
+  if(parcelas < 1) parcelas = 1;
+
+  let liquido = total - entrada;
+  if(liquido < 0) liquido = 0;
+
+  const valorParcela = liquido / parcelas;
+
   document.getElementById('valorTotal').innerText = liquido.toFixed(2);
+  document.getElementById('entradaResumo').innerText = entrada.toFixed(2);
+  document.getElementById('valorParcelas').innerText =
+    `${parcelas}x de R$ ${valorParcela.toFixed(2)}`;
 }
 
 document.getElementById('entrada').addEventListener('input', atualizarTotal);
+document.getElementById('parcelas').addEventListener('input', atualizarTotal);
+document.getElementById('produto').addEventListener('change', atualizarTotal);
+document.getElementById('quantidade').addEventListener('input', atualizarTotal);
 
 function enviarWebhook(){
   const itens = [];
+
   document.querySelectorAll('#lista tr').forEach(tr => {
     const tds = tr.querySelectorAll('td');
     itens.push({
@@ -222,27 +242,91 @@ function enviarWebhook(){
     });
   });
 
+  const parcelasQtd = Number(document.getElementById('parcelas').value || 1);
+  const dia = Number(document.getElementById('vencimento').value || 1);
+  const valorLiquido = Number(document.getElementById('valorTotal').innerText);
+  const valorParcela = valorLiquido / parcelasQtd;
+
+  const parcelasArray = [];
+  const hoje = new Date();
+
+  for (let i = 0; i < parcelasQtd; i++) {
+    const d = new Date(hoje);
+    d.setMonth(d.getMonth() + i + 1);
+    d.setDate(dia);
+
+    parcelasArray.push({
+      numero: i + 1,
+      valor: valorParcela.toFixed(2),
+      vencimento: d.toISOString().split('T')[0]
+    });
+  }
+
   const payload = {
-    nome: document.getElementById('nome').value,
-    cpf: document.getElementById('cpf').value,
-    telefone: document.getElementById('telefone').value,
-    endereco: document.getElementById('endereco').value,
+    nome: nome.value,
+    cpf: cpf.value,
+    telefone: telefone.value,
+    endereco: endereco.value,
     itens,
-    valor_total: total,
-    entrada: Number(document.getElementById('entrada').value),
-    parcelas: Number(document.getElementById('parcelas').value),
-    vencimento: document.getElementById('vencimento').value,
-    forma_pagamento: document.getElementById('forma').value
+    valor_total: valorLiquido,
+    entrada: Number(entrada.value),
+    parcelas: parcelasQtd,
+    vencimento: dia,
+    forma_pagamento: forma.value,
+    status: valorLiquido === 0 ? 'pago' : 'pendente',
+    parcelamento: parcelasArray
   };
 
-  fetch(WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+  fetch(WEBHOOK_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
   })
-  .then(res => res.json())
-  .then(() => alert('Venda enviada com sucesso!'))
-  .catch(err => alert('Erro ao enviar: ' + err));
+  .then(()=>alert('Venda enviada com sucesso!'))
+  .catch(e=>alert('Erro: '+e));
+}
+
+function gerarPDF(){
+  const resumo = document.getElementById('resumoPrint');
+  resumo.innerHTML = '';
+  resumo.style.display = 'block';
+
+  let itensHTML = '';
+  document.querySelectorAll('#lista tr').forEach(tr=>{
+    const t = tr.querySelectorAll('td');
+    itensHTML += `<p>${t[1].innerText}x ${t[0].innerText} - ${t[3].innerText}</p>`;
+  });
+
+  resumo.innerHTML = `
+    <div style="text-align:center;">
+      <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="max-height:90px">
+      <h2>Comprovante de Venda</h2>
+    </div>
+    <p><b>Cliente:</b> ${nome.value}</p>
+    <p><b>CPF:</b> ${cpf.value}</p>
+    <p><b>Telefone:</b> ${telefone.value}</p>
+    <p><b>Endereço:</b> ${endereco.value}</p>
+    <hr>
+    ${itensHTML}
+    <hr>
+    <p><b>Entrada:</b> R$ ${entrada.value}</p>
+    <p><b>Parcelas:</b> ${parcelas.value}</p>
+    <p><b>Vencimento:</b> Dia ${vencimento.value}</p>
+    <p><b>Forma:</b> ${forma.value}</p>
+    <h3>Total Final: R$ ${valorTotal.innerText}</h3>
+  `;
+
+ setTimeout(() => {
+  html2pdf()
+    .set({
+      margin: 10,
+      filename: 'comprovante-venda.pdf',
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    })
+    .from(resumo)
+    .save();
+}, 200);
 }
 </script>
 

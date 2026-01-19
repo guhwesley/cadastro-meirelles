@@ -309,8 +309,6 @@ function enviarWebhook(){
 }
 
 
-
-
 function imprimirComprovante() {
 
   let itensHTML = '';
@@ -326,70 +324,88 @@ function imprimirComprovante() {
     `;
   });
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Comprovante</title>
-<style>
-body { font-family: Arial; padding:12mm; }
-table { width:100%; border-collapse:collapse; font-size:12px; }
-th,td { border:1px solid #ccc; padding:5px; text-align:center; }
-th { background:#1e40af; color:white; }
-</style>
-</head>
-<body onload="window.print()">
+  const area = document.getElementById('printArea');
 
-<div style="display:flex;justify-content:space-between;align-items:center;background:#1e40af;color:white;padding:8px">
-  <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="height:55px">
-  <div style="text-align:right;font-size:12px">
-    <div>Comprovante de Venda</div>
-    <div>${new Date().toLocaleDateString()}</div>
+  area.innerHTML = `
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #printArea, #printArea * { visibility: visible; }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 10mm;
+        font-family: Arial;
+      }
+      table {
+        width:100%;
+        border-collapse:collapse;
+        font-size:12px;
+      }
+      th,td {
+        border:1px solid #ccc;
+        padding:5px;
+        text-align:center;
+      }
+      th {
+        background:#1e40af;
+        color:white;
+      }
+    }
+  </style>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;background:#1e40af;color:white;padding:8px">
+    <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="height:55px">
+    <div style="text-align:right;font-size:12px">
+      <div>Comprovante de Venda</div>
+      <div>${new Date().toLocaleDateString()}</div>
+    </div>
   </div>
-</div>
 
-<h3 style="text-align:center;margin:8px 0">RECIBO</h3>
+  <h3 style="text-align:center;margin:8px 0">RECIBO</h3>
 
-<p><strong>Cliente:</strong> ${$('nome').value}</p>
+  <p><strong>Cliente:</strong> ${$('nome').value}</p>
 <p><strong>CPF:</strong> ${$('cpf').value}</p>
 <p><strong>Telefone:</strong> ${$('telefone').value}</p>
 <p><strong>Endereço:</strong> ${$('endereco').value}</p>
 
-<table>
-<thead>
-<tr><th>Produto</th><th>Qtd</th><th>Valor</th><th>Total</th></tr>
-</thead>
-<tbody>${itensHTML}</tbody>
-</table>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Qtd</th>
+        <th>Valor</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>${itensHTML}</tbody>
+  </table>
 
-<p><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
+ <p><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
 <p><strong>Parcelas:</strong> ${$('parcelas').value}</p>
 <p><strong>Forma:</strong> ${$('forma').value}</p>
 
 <h3 style="text-align:right">
-Total: R$ ${document.getElementById('valorTotal').innerText}
+  Total: R$ ${$('valorTotal').innerText}
 </h3>
 
-<p style="text-align:center;font-style:italic;margin-top:10px">
-Obrigado pela preferência!
-</p>
-</body>
-</html>
-`;
+  <p style="text-align:center;font-style:italic;margin-top:10px">
+    Obrigado pela preferência!
+  </p>
+  `;
 
-  const win = window.open('', '_blank');
+  area.style.display = 'block';
 
-win.document.open();
-win.document.write(html);
-win.document.close();
+ setTimeout(() => {
+  window.print();
+}, 300);
 
-setTimeout(() => {
-  win.focus();
-  win.print();
-}, 700);
-  }
-
+  setTimeout(() => {
+    area.style.display = 'none';
+  }, 500);
+}
 
 /* ===== CEP AUTOMÁTICO ===== */
 document.getElementById('cep').addEventListener('blur', function () {
@@ -413,6 +429,8 @@ document.getElementById('cep').addEventListener('blur', function () {
     .catch(() => alert('Erro ao buscar o CEP'));
 });
 </script>
+
+<div id="printArea" style="display:none"></div>
 
 </body>
 </html>

@@ -1,11 +1,48 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 
   <meta charset="UTF-8" />
   <title>Cadastro de Vendas</title>
   <style>
+@media print {
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  /* só imprime o comprovante */
+  body * {
+    visibility: hidden;
+  }
+
+  #resumoPrint, #resumoPrint * {
+    visibility: visible;
+  }
+
+  #resumoPrint {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    padding: 15mm;
+    box-sizing: border-box;
+  }
+
+  /* impede quebra */
+  table, tr, td, th {
+    page-break-inside: avoid;
+  }
+
+  #printArea {
+    page-break-after: avoid;
+    page-break-before: avoid;
+  }
+}
+
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #0a3d62, #1e90ff);
@@ -56,11 +93,8 @@
     .logo-area { text-align:center; margin-bottom:20px; }
     .logo-area img { max-height:120px; margin-top:10px; }
 
-    @media print {
-      body { background:white; color:black; }
-      button, input, select { display:none; }
-      .box { box-shadow:none; }
-    }
+   
+    
   </style>
 </head>
 <body>
@@ -173,7 +207,8 @@
 
 <div class="box" style="text-align:center;">
   <button onclick="enviarWebhook()">📤 Enviar para o Sistema</button>
-  <button onclick="gerarPDF()">📄 Gerar PDF</button>
+  <button onclick="imprimirComprovante()">🖨️ Imprimir Comprovante</button>
+
 </div>
 
 <div id="resumoPrint" style="background:white;color:black;padding:20px;display:none"></div>
@@ -306,166 +341,96 @@ function enviarWebhook(){
   .catch(e=>alert('Erro: '+e));
 }
 
-let logoBase64 = "";
 
-function carregarLogoBase64(url) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = function () {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      logoBase64 = canvas.toDataURL("image/jpeg");
-      resolve();
-    };
-    img.src = url;
-  });
-}
 
-// carrega sua logo ao abrir a página
-carregarLogoBase64("https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg");
 
-async function gerarPDF(){
-  // garante que a logo esteja carregada
-  if (!logoBase64) {
-    await carregarLogoBase64("https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg");
-  }
+function imprimirComprovante() {
 
   const resumo = document.getElementById('resumoPrint');
-  resumo.innerHTML = '';
   resumo.style.display = 'block';
 
-let itensHTML = '';
-document.querySelectorAll('#lista tr').forEach(tr => {
-  const t = tr.querySelectorAll('td');
-  itensHTML += `
-    <tr>
-      <td style="padding:8px; border:1px solid #e5e7eb;">${t[0].innerText}</td>
-      <td style="padding:8px; border:1px solid #e5e7eb; text-align:center;">${t[1].innerText}</td>
-      <td style="padding:8px; border:1px solid #e5e7eb; text-align:right;">${t[2].innerText}</td>
-      <td style="padding:8px; border:1px solid #e5e7eb; text-align:right;">${t[3].innerText}</td>
-    </tr>
-  `;
-});
+  let itensHTML = '';
+  document.querySelectorAll('#lista tr').forEach(tr => {
+    const t = tr.querySelectorAll('td');
+    itensHTML += `
+      <tr>
+        <td>${t[0].innerText}</td>
+        <td style="text-align:center;">${t[1].innerText}</td>
+        <td style="text-align:right;">${t[2].innerText}</td>
+        <td style="text-align:right;">${t[3].innerText}</td>
+      </tr>
+    `;
+  });
 
   resumo.innerHTML = `
-   <div id="pdfContent" style="
-  width: 794px;
-  padding: 40px;
-  font-family: Arial, Helvetica, sans-serif;
-  color: #1f2937;
-  background: #ffffff;
-">
+ <div id="printArea">
 
   <!-- CABEÇALHO -->
   <div style="
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(90deg, #1e40af, #2563eb);
-    color: #fff;
-    padding: 20px;
-    border-radius: 8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#1e40af;
+    color:white;
+    padding:15px;
+    border-radius:6px;
   ">
-    <img src="${logoBase64}" style="height: 70px;" />
-
-    <div style="text-align: right; font-size: 14px;">
-      <div>@crediariomeirelles</div>
-      <div>Tel: (48) 98833-7779</div>
-      <div>meirellespatrick99@gmail.com</div>
+    <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="height:70px">
+    <div style="text-align:right;font-size:13px">
+      <div>Comprovante de Venda</div>
+      <div>${new Date().toLocaleDateString()}</div>
     </div>
   </div>
 
-  <!-- TÍTULO -->
-  <h1 style="
-    text-align: center;
-    margin: 30px 0 20px;
-    color: #1e3a8a;
-    letter-spacing: 1px;
-  ">
-    RECIBO DE VENDA
-  </h1>
+  <h2 style="text-align:center;margin:8px 0">RECIBO</h2>
 
-  <!-- DADOS DO CLIENTE -->
-  <div style="
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 25px;
-  ">
-    <h3 style="margin-bottom: 10px; color: #1e40af;">Dados do Cliente</h3>
-    <p><strong>Nome:</strong> ${$('nome').value}</p>
-    <p><strong>CPF:</strong> ${$('cpf').value}</p>
-    <p><strong>Telefone:</strong> ${$('telefone').value}</p>
-    <p><strong>Endereço:</strong> ${$('endereco').value}</p>
-  </div>
+  <!-- CLIENTE -->
+  <p style="font-size:13px;margin:4px 0"><strong>Cliente:</strong> ${$('nome').value}</p>
+  <p style="font-size:13px;margin:4px 0"><strong>CPF:</strong> ${$('cpf').value}</p>
+  <p style="font-size:13px;margin:4px 0"><strong>Telefone:</strong> ${$('telefone').value}</p>
+  <p style="font-size:13px;margin:4px 0"><strong>Endereço:</strong> ${$('endereco').value}</p>
 
   <!-- PRODUTOS -->
-  <table style="
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 25px;
-    font-size: 14px;
-  ">
+  <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px">
     <thead>
-      <tr style="background: #1e40af; color: white;">
-        <th style="padding: 10px;">Produto</th>
-        <th style="padding: 10px;">Qtd</th>
-        <th style="padding: 10px;">Valor Unitário</th>
-        <th style="padding: 10px;">Subtotal</th>
+      <tr style="background:#1e40af;color:white">
+        <th>Produto</th>
+        <th>Qtd</th>
+        <th>Valor</th>
+        <th>Total</th>
       </tr>
     </thead>
     <tbody>
-     ${itensHTML}
+      ${itensHTML}
     </tbody>
   </table>
 
-  <!-- RESUMO FINANCEIRO -->
-  <div style="
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 20px;
-    background: #f8fafc;
-  ">
-    <h3 style="color: #1e40af;">Resumo do Pagamento</h3>
-    <p><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
-    <p><strong>Parcelas:</strong> ${$('parcelas').value}</p>
-    <p><strong>Vencimento:</strong> Dia ${$('vencimento').value}</p>
-    <p><strong>Forma de Pagamento:</strong> ${$('forma').value}</p>
+  <!-- RESUMO -->
+  <div style="margin-top:10px">
+    <p style="font-size:13px;margin:4px 0"><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
+    <p style="font-size:13px;margin:4px 0"><strong>Parcelas:</strong> ${$('parcelas').value}</p>
+    <p style="font-size:13px;margin:4px 0"><strong>Vencimento:</strong> Dia ${$('vencimento').value}</p>
+    <p style="font-size:13px;margin:4px 0"><strong>Forma:</strong> ${$('forma').value}</p>
 
-    <h2 style="margin-top: 15px; color: #1e3a8a;">
+    <h2 style="text-align:right;margin-top:8px">
       Total: R$ ${document.getElementById('valorTotal').innerText}
     </h2>
   </div>
 
-  <!-- RODAPÉ -->
-  <div style="
-    text-align: center;
-    margin-top: 40px;
-    font-size: 18px;
-    color: #1e40af;
-    font-style: italic;
-  ">
+  <p style="text-align:center;margin-top:20px;font-style:italic;font-size:13px">
     Obrigado pela preferência!
-  </div>
+  </p>
 
+</div>
   `;
 
-  html2pdf()
-    .set({
-      margin: 10,
-      filename: 'comprovante-venda.pdf',
-      html2canvas: {
-        scale: 2,
-        useCORS: true
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    })
-    .from(resumo)
-    .save();
+  // imprime
+  window.print();
+
+  // esconde novamente após imprimir
+  setTimeout(() => {
+    resumo.style.display = 'none';
+  }, 500);
 }
 
 

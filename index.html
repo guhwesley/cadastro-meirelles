@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro de Vendas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0a3d62, #1e90ff);
+      padding: 20px;
+      color: #fff;
+    }
+
+    h1, h2 { text-align:center; }
+
+    .box {
+      background: #ffffff;
+      color: #333;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    label { display:block; margin-top:10px; font-weight:600; }
+
+    input, select {
+      width:100%;
+      padding:10px;
+      margin-top:4px;
+      border-radius:6px;
+      border:1px solid #ccc;
+    }
+
+    table { width:100%; border-collapse: collapse; margin-top:15px; }
+    th { background:#1e90ff; color:white; }
+    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+
+    button {
+      padding:10px 16px;
+      margin-top:10px;
+      cursor:pointer;
+      border:none;
+      border-radius:6px;
+      background:#1e90ff;
+      color:white;
+      font-weight:bold;
+    }
+
+    button:hover { background:#0a3d62; }
+
+    .total { font-size:20px; font-weight:bold; text-align:right; }
+
+    .logo-area { text-align:center; margin-bottom:20px; }
+    .logo-area img { max-height:120px; margin-top:10px; }
+
+    @media print {
+      body { background:white; color:black; }
+      button, input, select { display:none; }
+      .box { box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>📦 Cadastro de Vendas</h1>
+
+<div class="logo-area box">
+  <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" alt="Logo da Empresa" style="max-height:140px; margin:10px auto; display:block;" />
+</div>
+
+  <div>
+    <img id="logoPreview" />
+  </div>
+</div>
+
+<div class="box">
+  <h2>Cliente</h2>
+  <label>Nome <input id="nome" /></label>
+  <label>CPF <input id="cpf" /></label>
+  <label>Telefone <input id="telefone" /></label>
+  <label>Endereço <input id="endereco" /></label>
+</div>
+
+<div class="box">
+  <h2>Produtos</h2>
+
+  <label>Produto
+    <select id="produto">
+      <option value="" data-preco="0">Selecione</option>
+      <option data-preco="400">Cobredom - R$400</option>
+      <option data-preco="300">Colcha Casal - R$300</option>
+      <option data-preco="350">Colcha Queen - R$350</option>
+      <option data-preco="300">Jogo Lençol Casal - R$300</option>
+      <option data-preco="350">Jogo Lençol Queen - R$350</option>
+      <option data-preco="270">Lençol Solteiro - R$270</option>
+      <option data-preco="200">Kit Manta Infantil - R$200</option>
+      <option data-preco="180">Manta Que Brilha - R$180</option>
+      <option data-preco="100">Travesseiro - R$100</option>
+      <option data-preco="180">Frigideira 3 Peças - R$180</option>
+      <option data-preco="350">Frigideira Grande - R$350</option>
+      <option data-preco="180">Frigideira Grill - R$180</option>
+      <option data-preco="500">Jogo de Panela - R$500</option>
+      <option data-preco="400">Kit Cozinha Cinzal - R$400</option>
+      <option data-preco="300">Kit Cozinha J Serrano - R$300</option>
+      <option data-preco="450">Panela de Pressão - R$450</option>
+      <option data-preco="350">Panelão - R$350</option>
+      <option data-preco="50">Pote de Vidro - R$50</option>
+      <option data-preco="150">Jogo de Potes - R$150</option>
+      <option data-preco="180">Cortina Cozinha - R$180</option>
+      <option data-preco="120">Tapete Entrada - R$120</option>
+      <option data-preco="350">Tapete Sala Peludo - R$350</option>
+      <option data-preco="450">Tapete Veludo - R$450</option>
+      <option data-preco="400">Tapete Estampado - R$400</option>
+      <option data-preco="550">Baú - R$550</option>
+      <option data-preco="500">Cadeira Balanço - R$500</option>
+      <option data-preco="350">Cadeira Fixa - R$350</option>
+      <option data-preco="250">Mesinha - R$250</option>
+      <option data-preco="400">Sapateira - R$400</option>
+      <option data-preco="200">Jogo Banheiro - R$200</option>
+      <option data-preco="180">Cesto de Roupas - R$180</option>
+      <option data-preco="400">Espelho - R$400</option>
+    </select>
+  </label>
+
+  <label>Quantidade
+    <input id="quantidade" type="number" value="1" min="1" />
+  </label>
+
+  <button onclick="adicionarProduto()">Adicionar Produto</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Qtd</th>
+        <th>Preço</th>
+        <th>Total</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody id="lista"></tbody>
+  </table>
+
+  <p class="total">Valor Total: R$ <span id="valorTotal">0.00</span></p>
+</div>
+
+<div class="box">
+  <h2>Pagamento</h2>
+  <label>Entrada <input id="entrada" type="number" value="0" /></label>
+  <label>Parcelas <input id="parcelas" type="number" value="1" /></label>
+  <label>Vencimento <input id="vencimento" type="date" /></label>
+  <label>Forma de Pagamento
+    <select id="forma">
+      <option value="avista">À vista</option>
+      <option value="parcelado">Parcelado</option>
+      <option value="pix">Pix</option>
+      <option value="cartao">Cartão</option>
+    </select>
+  </label>
+</div>
+
+<div class="box" style="text-align:center;">
+  <button onclick="enviarWebhook()">📤 Enviar para o Sistema</button>
+  <button onclick="window.print()">🖨️ Imprimir Comprovante</button>
+</div>
+
+<script>
+let total = 0;
+
+const WEBHOOK_URL = "https://n8n.vps6993.panel.icontainer.net/webhook/MEIRELLES";
+
+
+
+function adicionarProduto(){
+  const select = document.getElementById('produto');
+  const nome = select.value;
+  const preco = Number(select.options[select.selectedIndex].dataset.preco);
+  const qtd = Number(document.getElementById('quantidade').value);
+
+  if(!nome) return alert('Selecione um produto');
+
+  const subtotal = preco * qtd;
+  total += subtotal;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${nome}</td>
+    <td>${qtd}</td>
+    <td>R$ ${preco}</td>
+    <td>R$ ${subtotal}</td>
+    <td><button onclick=\"remover(this, ${subtotal})\">X</button></td>
+  `;
+
+  document.getElementById('lista').appendChild(tr);
+  atualizarTotal();
+}
+
+function remover(btn, valor){
+  total -= valor;
+  btn.parentElement.parentElement.remove();
+  atualizarTotal();
+}
+
+function atualizarTotal(){
+  const entrada = Number(document.getElementById('entrada').value || 0);
+  const liquido = total - entrada;
+  document.getElementById('valorTotal').innerText = liquido.toFixed(2);
+}
+
+document.getElementById('entrada').addEventListener('input', atualizarTotal);
+
+function enviarWebhook(){
+  const itens = [];
+  document.querySelectorAll('#lista tr').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    itens.push({
+      produto: tds[0].innerText,
+      quantidade: Number(tds[1].innerText),
+      preco: Number(tds[2].innerText.replace('R$','')),
+      total: Number(tds[3].innerText.replace('R$',''))
+    });
+  });
+
+  const payload = {
+    nome: document.getElementById('nome').value,
+    cpf: document.getElementById('cpf').value,
+    telefone: document.getElementById('telefone').value,
+    endereco: document.getElementById('endereco').value,
+    itens,
+    valor_total: total,
+    entrada: Number(document.getElementById('entrada').value),
+    parcelas: Number(document.getElementById('parcelas').value),
+    vencimento: document.getElementById('vencimento').value,
+    forma_pagamento: document.getElementById('forma').value
+  };
+
+  fetch(WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(() => alert('Venda enviada com sucesso!'))
+  .catch(err => alert('Erro ao enviar: ' + err));
+}
+</script>
+
+</body>
+</html>

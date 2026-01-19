@@ -73,10 +73,19 @@
 
 <div class="box">
   <h2>Cliente</h2>
+
   <label>Nome <input id="nome" /></label>
   <label>CPF <input id="cpf" /></label>
   <label>Telefone <input id="telefone" /></label>
-  <label>Endereço <input id="endereco" /></label>
+
+  <label>Onde trabalha <input id="trabalho" /></label>
+
+  <label>CEP <input id="cep" /></label>
+  <label>Rua <input id="rua" /></label>
+  <label>Bairro <input id="bairro" /></label>
+  <label>Cidade <input id="cidade" /></label>
+
+  <label>Endereço (Número / Complemento) <input id="endereco" /></label>
 </div>
 
 <div class="box">
@@ -173,6 +182,9 @@
 let total = 0;
 
 const WEBHOOK_URL = "https://n8n.vps6993.panel.icontainer.net/webhook/MEIRELLES";
+function $(id){
+  return document.getElementById(id);
+}
 
 function adicionarProduto(){
   const select = document.getElementById('produto');
@@ -262,20 +274,28 @@ function enviarWebhook(){
     });
   }
 
-  const payload = {
-    nome: nome.value,
-    cpf: cpf.value,
-    telefone: telefone.value,
-    endereco: endereco.value,
-    itens,
-    valor_total: valorLiquido,
-    entrada: Number(entrada.value),
-    parcelas: parcelasQtd,
-    vencimento: dia,
-    forma_pagamento: forma.value,
-    status: valorLiquido === 0 ? 'pago' : 'pendente',
-    parcelamento: parcelasArray
-  };
+ const payload = {
+  nome: $('nome').value,
+  cpf: $('cpf').value,
+  telefone: $('telefone').value,
+
+  trabalho: $('trabalho').value,
+  cep: $('cep').value,
+  rua: $('rua').value,
+  bairro: $('bairro').value,
+  cidade: $('cidade').value,
+
+  endereco: $('endereco').value,
+  itens,
+  valor_total: valorLiquido,
+  entrada: Number($('entrada').value),
+  parcelas: parcelasQtd,
+  vencimento: dia,
+  forma_pagamento: $('forma').value,
+  status: valorLiquido === 0 ? 'pago' : 'pendente',
+  parcelamento: parcelasArray
+};
+
 
   fetch(WEBHOOK_URL,{
     method:'POST',
@@ -308,52 +328,168 @@ function carregarLogoBase64(url) {
 // carrega sua logo ao abrir a página
 carregarLogoBase64("https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg");
 
-function gerarPDF(){
+async function gerarPDF(){
+  // garante que a logo esteja carregada
+  if (!logoBase64) {
+    await carregarLogoBase64("https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg");
+  }
+
   const resumo = document.getElementById('resumoPrint');
   resumo.innerHTML = '';
   resumo.style.display = 'block';
 
-  let itensHTML = '';
-  document.querySelectorAll('#lista tr').forEach(tr=>{
-    const t = tr.querySelectorAll('td');
-    itensHTML += `<p>${t[1].innerText}x ${t[0].innerText} - ${t[3].innerText}</p>`;
-  });
+let itensHTML = '';
+document.querySelectorAll('#lista tr').forEach(tr => {
+  const t = tr.querySelectorAll('td');
+  itensHTML += `
+    <tr>
+      <td style="padding:8px; border:1px solid #e5e7eb;">${t[0].innerText}</td>
+      <td style="padding:8px; border:1px solid #e5e7eb; text-align:center;">${t[1].innerText}</td>
+      <td style="padding:8px; border:1px solid #e5e7eb; text-align:right;">${t[2].innerText}</td>
+      <td style="padding:8px; border:1px solid #e5e7eb; text-align:right;">${t[3].innerText}</td>
+    </tr>
+  `;
+});
 
   resumo.innerHTML = `
-    <div style="text-align:center;">
-<img 
- <img src="${logoBase64}" style="max-height:90px">
-  style="max-height:90px"
-  crossorigin="anonymous"
-/>
-      <h2>Comprovante de Venda</h2>
+   <div id="pdfContent" style="
+  width: 794px;
+  padding: 40px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #1f2937;
+  background: #ffffff;
+">
+
+  <!-- CABEÇALHO -->
+  <div style="
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #1e40af, #2563eb);
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+  ">
+    <img src="${logoBase64}" style="height: 70px;" />
+
+    <div style="text-align: right; font-size: 14px;">
+      <div>@crediariomeirelles</div>
+      <div>Tel: (48) 98833-7779</div>
+      <div>meirellespatrick99@gmail.com</div>
     </div>
-    <p><b>Cliente:</b> ${nome.value}</p>
-    <p><b>CPF:</b> ${cpf.value}</p>
-    <p><b>Telefone:</b> ${telefone.value}</p>
-    <p><b>Endereço:</b> ${endereco.value}</p>
-    <hr>
-    ${itensHTML}
-    <hr>
-    <p><b>Entrada:</b> R$ ${entrada.value}</p>
-    <p><b>Parcelas:</b> ${parcelas.value}</p>
-    <p><b>Vencimento:</b> Dia ${vencimento.value}</p>
-    <p><b>Forma:</b> ${forma.value}</p>
-    <h3>Total Final: R$ ${valorTotal.innerText}</h3>
+  </div>
+
+  <!-- TÍTULO -->
+  <h1 style="
+    text-align: center;
+    margin: 30px 0 20px;
+    color: #1e3a8a;
+    letter-spacing: 1px;
+  ">
+    RECIBO DE VENDA
+  </h1>
+
+  <!-- DADOS DO CLIENTE -->
+  <div style="
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+  ">
+    <h3 style="margin-bottom: 10px; color: #1e40af;">Dados do Cliente</h3>
+    <p><strong>Nome:</strong> ${$('nome').value}</p>
+    <p><strong>CPF:</strong> ${$('cpf').value}</p>
+    <p><strong>Telefone:</strong> ${$('telefone').value}</p>
+    <p><strong>Endereço:</strong> ${$('endereco').value}</p>
+  </div>
+
+  <!-- PRODUTOS -->
+  <table style="
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+    font-size: 14px;
+  ">
+    <thead>
+      <tr style="background: #1e40af; color: white;">
+        <th style="padding: 10px;">Produto</th>
+        <th style="padding: 10px;">Qtd</th>
+        <th style="padding: 10px;">Valor Unitário</th>
+        <th style="padding: 10px;">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+     ${itensHTML}
+    </tbody>
+  </table>
+
+  <!-- RESUMO FINANCEIRO -->
+  <div style="
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    background: #f8fafc;
+  ">
+    <h3 style="color: #1e40af;">Resumo do Pagamento</h3>
+    <p><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
+    <p><strong>Parcelas:</strong> ${$('parcelas').value}</p>
+    <p><strong>Vencimento:</strong> Dia ${$('vencimento').value}</p>
+    <p><strong>Forma de Pagamento:</strong> ${$('forma').value}</p>
+
+    <h2 style="margin-top: 15px; color: #1e3a8a;">
+      Total: R$ ${document.getElementById('valorTotal').innerText}
+    </h2>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div style="
+    text-align: center;
+    margin-top: 40px;
+    font-size: 18px;
+    color: #1e40af;
+    font-style: italic;
+  ">
+    Obrigado pela preferência!
+  </div>
+
   `;
 
- setTimeout(() => {
   html2pdf()
     .set({
       margin: 10,
       filename: 'comprovante-venda.pdf',
-      html2canvas: { scale: 2 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true
+      },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     })
     .from(resumo)
     .save();
-}, 200);
 }
+
+
+/* ===== CEP AUTOMÁTICO ===== */
+document.getElementById('cep').addEventListener('blur', function () {
+  const cep = this.value.replace(/\D/g, '');
+
+  if (cep.length !== 8) return;
+  
+
+  fetch(`https://viacep.com.br/ws/${cep}/json/`)
+    .then(response => response.json())
+    .then(dados => {
+      if (dados.erro) {
+        alert('CEP não encontrado');
+        return;
+      }
+
+      document.getElementById('rua').value = dados.logradouro || '';
+      document.getElementById('bairro').value = dados.bairro || '';
+      document.getElementById('cidade').value = dados.localidade || '';
+    })
+    .catch(() => alert('Erro ao buscar o CEP'));
+});
 </script>
 
 </body>

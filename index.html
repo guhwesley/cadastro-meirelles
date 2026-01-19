@@ -6,42 +6,7 @@
   <meta charset="UTF-8" />
   <title>Cadastro de Vendas</title>
   <style>
-@media print {
 
-  body {
-    margin: 0;
-    padding: 0;
-    background: white;
-  }
-
-  /* só imprime o comprovante */
-  body * {
-    visibility: hidden;
-  }
-
-  #resumoPrint, #resumoPrint * {
-    visibility: visible;
-  }
-
-  #resumoPrint {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 210mm;
-    padding: 15mm;
-    box-sizing: border-box;
-  }
-
-  /* impede quebra */
-  table, tr, td, th {
-    page-break-inside: avoid;
-  }
-
-  #printArea {
-    page-break-after: avoid;
-    page-break-before: avoid;
-  }
-}
 
     body {
       font-family: Arial, sans-serif;
@@ -207,11 +172,13 @@
 
 <div class="box" style="text-align:center;">
   <button onclick="enviarWebhook()">📤 Enviar para o Sistema</button>
-  <button onclick="imprimirComprovante()">🖨️ Imprimir Comprovante</button>
+ <button onclick="imprimirComprovante()">
+  📄 Compartilhar / Imprimir
+</button>
+
+
 
 </div>
-
-<div id="resumoPrint" style="background:white;color:black;padding:20px;display:none"></div>
 
 <script>
 let total = 0;
@@ -346,92 +313,82 @@ function enviarWebhook(){
 
 function imprimirComprovante() {
 
-  const resumo = document.getElementById('resumoPrint');
-  resumo.style.display = 'block';
-
   let itensHTML = '';
   document.querySelectorAll('#lista tr').forEach(tr => {
     const t = tr.querySelectorAll('td');
     itensHTML += `
       <tr>
         <td>${t[0].innerText}</td>
-        <td style="text-align:center;">${t[1].innerText}</td>
-        <td style="text-align:right;">${t[2].innerText}</td>
-        <td style="text-align:right;">${t[3].innerText}</td>
+        <td>${t[1].innerText}</td>
+        <td>${t[2].innerText}</td>
+        <td>${t[3].innerText}</td>
       </tr>
     `;
   });
 
-  resumo.innerHTML = `
- <div id="printArea">
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Comprovante</title>
+<style>
+body { font-family: Arial; padding:12mm; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th,td { border:1px solid #ccc; padding:5px; text-align:center; }
+th { background:#1e40af; color:white; }
+</style>
+</head>
+<body onload="window.print()">
 
-  <!-- CABEÇALHO -->
-  <div style="
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:#1e40af;
-    color:white;
-    padding:15px;
-    border-radius:6px;
-  ">
-    <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="height:70px">
-    <div style="text-align:right;font-size:13px">
-      <div>Comprovante de Venda</div>
-      <div>${new Date().toLocaleDateString()}</div>
-    </div>
+<div style="display:flex;justify-content:space-between;align-items:center;background:#1e40af;color:white;padding:8px">
+  <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="height:55px">
+  <div style="text-align:right;font-size:12px">
+    <div>Comprovante de Venda</div>
+    <div>${new Date().toLocaleDateString()}</div>
   </div>
-
-  <h2 style="text-align:center;margin:8px 0">RECIBO</h2>
-
-  <!-- CLIENTE -->
-  <p style="font-size:13px;margin:4px 0"><strong>Cliente:</strong> ${$('nome').value}</p>
-  <p style="font-size:13px;margin:4px 0"><strong>CPF:</strong> ${$('cpf').value}</p>
-  <p style="font-size:13px;margin:4px 0"><strong>Telefone:</strong> ${$('telefone').value}</p>
-  <p style="font-size:13px;margin:4px 0"><strong>Endereço:</strong> ${$('endereco').value}</p>
-
-  <!-- PRODUTOS -->
-  <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px">
-    <thead>
-      <tr style="background:#1e40af;color:white">
-        <th>Produto</th>
-        <th>Qtd</th>
-        <th>Valor</th>
-        <th>Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${itensHTML}
-    </tbody>
-  </table>
-
-  <!-- RESUMO -->
-  <div style="margin-top:10px">
-    <p style="font-size:13px;margin:4px 0"><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
-    <p style="font-size:13px;margin:4px 0"><strong>Parcelas:</strong> ${$('parcelas').value}</p>
-    <p style="font-size:13px;margin:4px 0"><strong>Vencimento:</strong> Dia ${$('vencimento').value}</p>
-    <p style="font-size:13px;margin:4px 0"><strong>Forma:</strong> ${$('forma').value}</p>
-
-    <h2 style="text-align:right;margin-top:8px">
-      Total: R$ ${document.getElementById('valorTotal').innerText}
-    </h2>
-  </div>
-
-  <p style="text-align:center;margin-top:20px;font-style:italic;font-size:13px">
-    Obrigado pela preferência!
-  </p>
-
 </div>
-  `;
 
-  // imprime
-  window.print();
+<h3 style="text-align:center;margin:8px 0">RECIBO</h3>
 
-  // esconde novamente após imprimir
-  setTimeout(() => {
-    resumo.style.display = 'none';
-  }, 500);
-}
+<p><strong>Cliente:</strong> ${$('nome').value}</p>
+<p><strong>CPF:</strong> ${$('cpf').value}</p>
+<p><strong>Telefone:</strong> ${$('telefone').value}</p>
+<p><strong>Endereço:</strong> ${$('endereco').value}</p>
+
+<table>
+<thead>
+<tr><th>Produto</th><th>Qtd</th><th>Valor</th><th>Total</th></tr>
+</thead>
+<tbody>${itensHTML}</tbody>
+</table>
+
+<p><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
+<p><strong>Parcelas:</strong> ${$('parcelas').value}</p>
+<p><strong>Forma:</strong> ${$('forma').value}</p>
+
+<h3 style="text-align:right">
+Total: R$ ${document.getElementById('valorTotal').innerText}
+</h3>
+
+<p style="text-align:center;font-style:italic;margin-top:10px">
+Obrigado pela preferência!
+</p>
+</body>
+</html>
+`;
+
+  const win = window.open('', '_blank');
+
+win.document.open();
+win.document.write(html);
+win.document.close();
+
+setTimeout(() => {
+  win.focus();
+  win.print();
+}, 700);
+  }
 
 
 /* ===== CEP AUTOMÁTICO ===== */
@@ -459,3 +416,4 @@ document.getElementById('cep').addEventListener('blur', function () {
 
 </body>
 </html>
+

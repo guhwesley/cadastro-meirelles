@@ -286,6 +286,28 @@ function enviarWebhook(){
   .catch(e=>alert('Erro: '+e));
 }
 
+let logoBase64 = "";
+
+function carregarLogoBase64(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function () {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      logoBase64 = canvas.toDataURL("image/jpeg");
+      resolve();
+    };
+    img.src = url;
+  });
+}
+
+// carrega sua logo ao abrir a página
+carregarLogoBase64("https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg");
+
 function gerarPDF(){
   const resumo = document.getElementById('resumoPrint');
   resumo.innerHTML = '';
@@ -299,7 +321,11 @@ function gerarPDF(){
 
   resumo.innerHTML = `
     <div style="text-align:center;">
-      <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="max-height:90px">
+<img 
+ <img src="${logoBase64}" style="max-height:90px">
+  style="max-height:90px"
+  crossorigin="anonymous"
+/>
       <h2>Comprovante de Venda</h2>
     </div>
     <p><b>Cliente:</b> ${nome.value}</p>

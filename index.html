@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-
-
   <meta charset="UTF-8" />
   <title>Cadastro de Vendas</title>
+  
+  <!-- Font Awesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <!-- html2canvas para gerar imagem do comprovante -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
-
-
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #0a3d62, #1e90ff);
@@ -58,8 +61,34 @@
     .logo-area { text-align:center; margin-bottom:20px; }
     .logo-area img { max-height:120px; margin-top:10px; }
 
-   
-    
+    /* Estilo do comprovante */
+    .comprovante {
+      padding:20px;
+      background:#fff;
+      color:#000;
+      font-family: Arial, sans-serif;
+      width:400px;
+      margin:0 auto;
+      border:1px solid #ccc;
+      border-radius:10px;
+    }
+
+    .empresa-nome {
+      font-size:18px;
+      font-weight:bold;
+      color:#1e90ff;
+      margin:5px 0;
+    }
+
+    .empresa-contato i {
+      margin-right:5px;
+    }
+
+    .empresa-contato .instagram { color:#E1306C; }
+    .empresa-contato .whatsapp { color:#25D366; }
+    .empresa-contato .email { color:#EA4335; }
+
+    h3 { color:#1e90ff; margin-bottom:10px; }
   </style>
 </head>
 <body>
@@ -76,14 +105,11 @@
   <label>Nome <input id="nome" /></label>
   <label>CPF <input id="cpf" /></label>
   <label>Telefone <input id="telefone" /></label>
-
   <label>Onde trabalha <input id="trabalho" /></label>
-
   <label>CEP <input id="cep" /></label>
   <label>Rua <input id="rua" /></label>
   <label>Bairro <input id="bairro" /></label>
   <label>Cidade <input id="cidade" /></label>
-
   <label>Endereço (Número / Complemento) <input id="endereco" /></label>
 </div>
 
@@ -128,10 +154,7 @@
     </select>
   </label>
 
-  <label>Quantidade
-    <input id="quantidade" type="number" value="1" min="1" />
-  </label>
-
+  <label>Quantidade <input id="quantidade" type="number" value="1" min="1" /></label>
   <button onclick="adicionarProduto()">Adicionar Produto</button>
 
   <table>
@@ -145,21 +168,18 @@
       </tr>
     </thead>
     <tbody id="lista"></tbody>
-  
-</table>
+  </table>
 
-<p class="total">Entrada: R$ <span id="entradaResumo">0.00</span></p>
-<p class="total">Valor Total: R$ <span id="valorTotal">0.00</span></p>
-<p class="total">Parcelamento: <span id="valorParcelas">1x de R$ 0.00</span></p>
+  <p class="total">Entrada: R$ <span id="entradaResumo">0.00</span></p>
+  <p class="total">Valor Total: R$ <span id="valorTotal">0.00</span></p>
+  <p class="total">Parcelamento: <span id="valorParcelas">1x de R$ 0.00</span></p>
 </div>
 
 <div class="box">
   <h2>Pagamento</h2>
   <label>Entrada <input id="entrada" type="number" value="0" /></label>
   <label>Parcelas <input id="parcelas" type="number" value="1" /></label>
-  <label>Dia do Vencimento
-  <input id="vencimento" type="number" min="1" max="31" placeholder="Ex: 25" />
-</label>
+  <label>Dia do Vencimento <input id="vencimento" type="number" min="1" max="31" placeholder="Ex: 25" /></label>
   <label>Forma de Pagamento
     <select id="forma">
       <option value="avista">À vista</option>
@@ -172,30 +192,20 @@
 
 <div class="box" style="text-align:center;">
   <button onclick="enviarWebhook()">📤 Enviar para o Sistema</button>
- <button onclick="imprimirComprovante()">
-  📄 Compartilhar / Imprimir
-</button>
-
-
-
+  <button onclick="imprimirComprovante()">📄 Compartilhar / Imprimir</button>
 </div>
 
 <script>
 let total = 0;
-
 const WEBHOOK_URL = "https://n8n.vps6993.panel.icontainer.net/webhook/MEIRELLES";
-function $(id){
-  return document.getElementById(id);
-}
+function $(id){ return document.getElementById(id); }
 
 function adicionarProduto(){
-  const select = document.getElementById('produto');
+  const select = $('produto');
   const nome = select.options[select.selectedIndex].text;
   const preco = Number(select.options[select.selectedIndex].dataset.preco);
-  const qtd = Number(document.getElementById('quantidade').value);
-
+  const qtd = Number($('quantidade').value);
   if(!preco) return alert('Selecione um produto');
-
   const subtotal = preco * qtd;
   total += subtotal;
 
@@ -207,12 +217,10 @@ function adicionarProduto(){
     <td>R$ ${subtotal}</td>
     <td><button onclick="remover(this, ${subtotal})">X</button></td>
   `;
-
-  document.getElementById('lista').appendChild(tr);
+  $('lista').appendChild(tr);
   atualizarTotal();
-
-  document.getElementById('quantidade').value = 1;
-  document.getElementById('produto').selectedIndex = 0;
+  $('quantidade').value = 1;
+  select.selectedIndex = 0;
 }
 
 function remover(btn, valor){
@@ -222,30 +230,49 @@ function remover(btn, valor){
 }
 
 function atualizarTotal(){
-  const entrada = Number(document.getElementById('entrada').value || 0);
-  let parcelas = Number(document.getElementById('parcelas').value || 1);
-
+  const entrada = Number($('entrada').value || 0);
+  let parcelas = Number($('parcelas').value || 1);
   if(parcelas < 1) parcelas = 1;
-
   let liquido = total - entrada;
   if(liquido < 0) liquido = 0;
 
-  const valorParcela = liquido / parcelas;
+  // Cálculo de desconto à vista
+  let descontoAvista = 0;
+  if($('forma').value === 'avista'){
+    descontoAvista = liquido * 0.10; // 10% de desconto
+  }
+  const valorComDesconto = liquido - descontoAvista;
 
-  document.getElementById('valorTotal').innerText = liquido.toFixed(2);
-  document.getElementById('entradaResumo').innerText = entrada.toFixed(2);
-  document.getElementById('valorParcelas').innerText =
-    `${parcelas}x de R$ ${valorParcela.toFixed(2)}`;
+  const valorParcela = valorComDesconto / parcelas;
+
+  // Mostrar desconto na tela apenas se houver
+  if(descontoAvista > 0){
+    if(!$('desconto')){ 
+      const p = document.createElement('p');
+      p.className = 'total';
+      p.id = 'desconto';
+      p.style.color = '#FFD700'; // dourado
+      p.style.textAlign = 'right';
+      $('valorTotal').parentElement.insertBefore(p, $('valorTotal').parentElement.firstChild);
+    }
+    $('desconto').innerText = `Desconto à vista: R$ ${descontoAvista.toFixed(2)}`;
+  } else if($('desconto')){
+    $('desconto').remove();
+  }
+
+  $('valorTotal').innerText = valorComDesconto.toFixed(2);
+  $('entradaResumo').innerText = entrada.toFixed(2);
+  $('valorParcelas').innerText = `${parcelas}x de R$ ${valorParcela.toFixed(2)}`;
 }
 
-document.getElementById('entrada').addEventListener('input', atualizarTotal);
-document.getElementById('parcelas').addEventListener('input', atualizarTotal);
-document.getElementById('produto').addEventListener('change', atualizarTotal);
-document.getElementById('quantidade').addEventListener('input', atualizarTotal);
+$('entrada').addEventListener('input', atualizarTotal);
+$('parcelas').addEventListener('input', atualizarTotal);
+$('produto').addEventListener('change', atualizarTotal);
+$('quantidade').addEventListener('input', atualizarTotal);
+$('forma').addEventListener('change', atualizarTotal);
 
 function enviarWebhook(){
   const itens = [];
-
   document.querySelectorAll('#lista tr').forEach(tr => {
     const tds = tr.querySelectorAll('td');
     itens.push({
@@ -256,19 +283,17 @@ function enviarWebhook(){
     });
   });
 
-  const parcelasQtd = Number(document.getElementById('parcelas').value || 1);
-  const dia = Number(document.getElementById('vencimento').value || 1);
-  const valorLiquido = Number(document.getElementById('valorTotal').innerText);
+  const parcelasQtd = Number($('parcelas').value || 1);
+  const dia = Number($('vencimento').value || 1);
+  const valorLiquido = Number($('valorTotal').innerText);
   const valorParcela = valorLiquido / parcelasQtd;
 
   const parcelasArray = [];
   const hoje = new Date();
-
   for (let i = 0; i < parcelasQtd; i++) {
     const d = new Date(hoje);
     d.setMonth(d.getMonth() + i + 1);
     d.setDate(dia);
-
     parcelasArray.push({
       numero: i + 1,
       valor: valorParcela.toFixed(2),
@@ -276,28 +301,25 @@ function enviarWebhook(){
     });
   }
 
- const payload = {
-  nome: $('nome').value,
-  cpf: $('cpf').value,
-  telefone: $('telefone').value,
-
-  trabalho: $('trabalho').value,
-  cep: $('cep').value,
-  rua: $('rua').value,
-  bairro: $('bairro').value,
-  cidade: $('cidade').value,
-
-  endereco: $('endereco').value,
-  itens,
-  valor_total: valorLiquido,
-  entrada: Number($('entrada').value),
-  parcelas: parcelasQtd,
-  vencimento: dia,
-  forma_pagamento: $('forma').value,
-  status: valorLiquido === 0 ? 'pago' : 'pendente',
-  parcelamento: parcelasArray
-};
-
+  const payload = {
+    nome: $('nome').value,
+    cpf: $('cpf').value,
+    telefone: $('telefone').value,
+    trabalho: $('trabalho').value,
+    cep: $('cep').value,
+    rua: $('rua').value,
+    bairro: $('bairro').value,
+    cidade: $('cidade').value,
+    endereco: $('endereco').value,
+    itens,
+    valor_total: valorLiquido,
+    entrada: Number($('entrada').value),
+    parcelas: parcelasQtd,
+    vencimento: dia,
+    forma_pagamento: $('forma').value,
+    status: valorLiquido === 0 ? 'pago' : 'pendente',
+    parcelamento: parcelasArray
+  };
 
   fetch(WEBHOOK_URL,{
     method:'POST',
@@ -308,111 +330,83 @@ function enviarWebhook(){
   .catch(e=>alert('Erro: '+e));
 }
 
+// Função de comprovante com logo grande e cores
+function imprimirComprovante(){
+    const comprovanteDiv = document.createElement('div');
+    comprovanteDiv.className = "comprovante";
 
-function imprimirComprovante() {
-
-  let itensHTML = '';
-  document.querySelectorAll('#lista tr').forEach(tr => {
-    const t = tr.querySelectorAll('td');
-    itensHTML += `
-      <tr>
-        <td>${t[0].innerText}</td>
-        <td>${t[1].innerText}</td>
-        <td>${t[2].innerText}</td>
-        <td>${t[3].innerText}</td>
-      </tr>
-    `;
-  });
-
-  const area = document.getElementById('printArea');
-
-  area.innerHTML = `
-  <style>
-    @media print {
-      body * { visibility: hidden; }
-      #printArea, #printArea * { visibility: visible; }
-      #printArea {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 10mm;
-        font-family: Arial;
-      }
-      table {
-        width:100%;
-        border-collapse:collapse;
-        font-size:12px;
-      }
-      th,td {
-        border:1px solid #ccc;
-        padding:5px;
-        text-align:center;
-      }
-      th {
-        background:#1e40af;
-        color:white;
-      }
-    }
-  </style>
-
-  <div style="display:flex;justify-content:space-between;align-items:center;background:#1e40af;color:white;padding:8px">
-    <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" style="height:55px">
-    <div style="text-align:right;font-size:12px">
-      <div>Comprovante de Venda</div>
-      <div>${new Date().toLocaleDateString()}</div>
+    const empresaHTML = `
+    <div style="text-align:center;margin-bottom:10px;">
+      <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" 
+           style="max-height:120px; display:block; margin:0 auto 10px auto;"/>
+      <div class="empresa-nome">Crediario Meirelles</div>
+      <div class="empresa-contato">
+        <i class="fab fa-instagram instagram"></i> @crediariomeirelles<br/>
+        <i class="fab fa-whatsapp whatsapp"></i> (48) 98833-7779<br/>
+        <i class="fas fa-envelope email"></i> meirellespatrick99@gmail.com
+      </div>
     </div>
-  </div>
+    <h3>RECIBO DE VENDA</h3>
+    `;
 
-  <h3 style="text-align:center;margin:8px 0">RECIBO</h3>
+    const clienteHTML = `
+      <p><strong>Nome:</strong> ${$('nome').value}</p>
+      <p><strong>CPF:</strong> ${$('cpf').value}</p>
+      <p><strong>Telefone:</strong> ${$('telefone').value}</p>
+      <p><strong>Endereço:</strong> ${$('endereco').value}</p>
+    `;
 
-  <p><strong>Cliente:</strong> ${$('nome').value}</p>
-<p><strong>CPF:</strong> ${$('cpf').value}</p>
-<p><strong>Telefone:</strong> ${$('telefone').value}</p>
-<p><strong>Endereço:</strong> ${$('endereco').value}</p>
+    let itensHTML = '';
+    document.querySelectorAll('#lista tr').forEach(tr=>{
+        const t = tr.querySelectorAll('td');
+        itensHTML += `<tr>
+                        <td>${t[0].innerText}</td>
+                        <td>${t[1].innerText}</td>
+                        <td>${t[2].innerText}</td>
+                        <td>${t[3].innerText}</td>
+                      </tr>`;
+    });
 
-  <table>
-    <thead>
-      <tr>
-        <th>Produto</th>
-        <th>Qtd</th>
-        <th>Valor</th>
-        <th>Total</th>
-      </tr>
-    </thead>
-    <tbody>${itensHTML}</tbody>
-  </table>
+    const produtosHTML = `
+      <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+        <thead>
+          <tr style="background:#1e90ff; color:#fff;">
+            <th>Produto</th>
+            <th>Qtd</th>
+            <th>Valor Unitário</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>${itensHTML}</tbody>
+      </table>
+    `;
 
- <p><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
-<p><strong>Parcelas:</strong> ${$('parcelas').value}</p>
-<p><strong>Forma:</strong> ${$('forma').value}</p>
+      const resumoHTML = `
+  <p style="text-align:right; margin-top:5px;"><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
+  ${$('desconto') ? `<p style="text-align:right; color:#FFD700;"><strong>${$('desconto').innerText}</strong></p>` : ''}
+  <p style="text-align:right;"><strong>Total:</strong> R$ ${$('valorTotal').innerText}</p>
+  <p style="text-align:right;"><strong>Parcelamento:</strong> ${$('parcelas').value}x de R$ ${(Number($('valorTotal').innerText)/Number($('parcelas').value)).toFixed(2)}</p>
+  <p style="text-align:right;"><strong>Vencimento:</strong> Todo dia ${$('vencimento').value}</p>
+  <p style="text-align:right;"><strong>Forma de Pagamento:</strong> ${$('forma').value}</p>
+  <p style="text-align:center; font-style:italic; margin-top:10px;">Obrigado pela preferência!</p>
+`;
 
-<h3 style="text-align:right">
-  Total: R$ ${$('valorTotal').innerText}
-</h3>
+    comprovanteDiv.innerHTML = empresaHTML + clienteHTML + produtosHTML + resumoHTML;
+    document.body.appendChild(comprovanteDiv);
 
-  <p style="text-align:center;font-style:italic;margin-top:10px">
-    Obrigado pela preferência!
-  </p>
-  `;
-
-  area.style.display = 'block';
-
- setTimeout(() => {
-  window.print();
-}, 300);
-
-  setTimeout(() => {
-    area.style.display = 'none';
-  }, 500);
+    html2canvas(comprovanteDiv).then(canvas=>{
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'comprovante.png';
+        link.click();
+        document.body.removeChild(comprovanteDiv);
+    });
 }
 
 /* ===== CEP AUTOMÁTICO ===== */
-document.getElementById('cep').addEventListener('blur', function () {
+$('cep').addEventListener('blur', function () {
   const cep = this.value.replace(/\D/g, '');
-
   if (cep.length !== 8) return;
-  
 
   fetch(`https://viacep.com.br/ws/${cep}/json/`)
     .then(response => response.json())
@@ -421,17 +415,13 @@ document.getElementById('cep').addEventListener('blur', function () {
         alert('CEP não encontrado');
         return;
       }
-
-      document.getElementById('rua').value = dados.logradouro || '';
-      document.getElementById('bairro').value = dados.bairro || '';
-      document.getElementById('cidade').value = dados.localidade || '';
+      $('rua').value = dados.logradouro || '';
+      $('bairro').value = dados.bairro || '';
+      $('cidade').value = dados.localidade || '';
     })
     .catch(() => alert('Erro ao buscar o CEP'));
 });
 </script>
 
-<div id="printArea" style="display:none"></div>
-
 </body>
 </html>
-

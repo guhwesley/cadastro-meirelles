@@ -96,7 +96,7 @@
 <h1>📦 Cadastro de Vendas</h1>
 
 <div class="logo-area box">
-  <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" alt="Logo da Empresa" style="max-height:140px; margin:10px auto; display:block;" />
+  <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" alt="Logo da Empresa" style="max-height:200px; margin:10px auto; display:block;" />
 </div>
 
 <div class="box">
@@ -335,25 +335,24 @@ function imprimirComprovante(){
     const comprovanteDiv = document.createElement('div');
     comprovanteDiv.className = "comprovante";
 
+    // Informações da empresa sem logo, mais compactas e no topo
     const empresaHTML = `
-    <div style="text-align:center;margin-bottom:10px;">
-      <img src="https://i.postimg.cc/15q9V4g3/590410744-17857518639567477-1261351053422766599-n.jpg" 
-           style="max-height:120px; display:block; margin:0 auto 10px auto;"/>
-      <div class="empresa-nome">Crediario Meirelles</div>
-      <div class="empresa-contato">
-        <i class="fab fa-instagram instagram"></i> @crediariomeirelles<br/>
-        <i class="fab fa-whatsapp whatsapp"></i> (48) 98833-7779<br/>
-        <i class="fas fa-envelope email"></i> meirellespatrick99@gmail.com
-      </div>
+    <div style="text-align:center; margin-bottom:10px;">
+        <div class="empresa-nome" style="font-size:18px; font-weight:bold; color:#1e90ff;">Crediario Meirelles</div>
+        <div class="empresa-contato" style="font-size:14px; line-height:1.4;">
+            <i class="fab fa-instagram instagram"></i> @crediariomeirelles<br/>
+            <i class="fab fa-whatsapp whatsapp"></i> (48) 98833-7779<br/>
+            <i class="fas fa-envelope email"></i> meirellespatrick99@gmail.com
+        </div>
     </div>
-    <h3>RECIBO DE VENDA</h3>
+    <h3 style="text-align:left; color:#1e90ff; margin-bottom:10px;">RECIBO DE VENDA</h3>
     `;
 
     const clienteHTML = `
       <p><strong>Nome:</strong> ${$('nome').value}</p>
       <p><strong>CPF:</strong> ${$('cpf').value}</p>
       <p><strong>Telefone:</strong> ${$('telefone').value}</p>
-      <p><strong>Endereço:</strong> ${$('endereco').value}</p>
+      <p><strong>Endereço:</strong> ${$('rua').value} ${$('endereco').value} - ${$('bairro').value}, ${$('cidade').value}</p>
     `;
 
     let itensHTML = '';
@@ -381,15 +380,15 @@ function imprimirComprovante(){
       </table>
     `;
 
-      const resumoHTML = `
-  <p style="text-align:right; margin-top:5px;"><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
-  ${$('desconto') ? `<p style="text-align:right; color:#FFD700;"><strong>${$('desconto').innerText}</strong></p>` : ''}
-  <p style="text-align:right;"><strong>Total:</strong> R$ ${$('valorTotal').innerText}</p>
-  <p style="text-align:right;"><strong>Parcelamento:</strong> ${$('parcelas').value}x de R$ ${(Number($('valorTotal').innerText)/Number($('parcelas').value)).toFixed(2)}</p>
-  <p style="text-align:right;"><strong>Vencimento:</strong> Todo dia ${$('vencimento').value}</p>
-  <p style="text-align:right;"><strong>Forma de Pagamento:</strong> ${$('forma').value}</p>
-  <p style="text-align:center; font-style:italic; margin-top:10px;">Obrigado pela preferência!</p>
-`;
+    const resumoHTML = `
+      <p style="text-align:right; margin-top:5px;"><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
+      ${$('desconto') ? `<p style="text-align:right; color:#FFD700;"><strong>${$('desconto').innerText}</strong></p>` : ''}
+      <p style="text-align:right;"><strong>Total:</strong> R$ ${$('valorTotal').innerText}</p>
+      <p style="text-align:right;"><strong>Parcelamento:</strong> ${$('parcelas').value}x de R$ ${(Number($('valorTotal').innerText)/Number($('parcelas').value)).toFixed(2)}</p>
+      <p style="text-align:right;"><strong>Vencimento:</strong> Todo dia ${$('vencimento').value}</p>
+      <p style="text-align:right;"><strong>Forma de Pagamento:</strong> ${$('forma').value}</p>
+      <p style="text-align:center; font-style:italic; margin-top:10px;">Obrigado pela preferência!</p>
+    `;
 
     comprovanteDiv.innerHTML = empresaHTML + clienteHTML + produtosHTML + resumoHTML;
     document.body.appendChild(comprovanteDiv);

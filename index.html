@@ -177,28 +177,40 @@
 
 <div class="box">
   <h2>Pagamento</h2>
-  <label>Entrada <input id="entrada" type="number" value="0" /></label>
-  <label>Parcelas <input id="parcelas" type="number" value="1" /></label>
-  <label>Dia do Vencimento <input id="vencimento" type="number" min="1" max="31" placeholder="Ex: 25" /></label>
-  <label>Forma de Pagamento
-    <select id="forma">
-      <option value="avista">À vista</option>
-      <option value="parcelado">Parcelado</option>
-      <option value="pix">Pix</option>
-      <option value="cartao">Cartão</option>
-    </select>
-  </label>
+ <label>Entrada <input id="entrada" type="number" value="0" /></label>
+
+<label>Forma de Pagamento
+  <select id="forma">
+    <option value="avista">À vista</option>
+    <option value="parcelado">Parcelado</option>
+    <option value="pix">Pix</option>
+    <option value="cartao">Cartão</option>
+  </select>
+</label>
+
+<label>Parcelas <input id="parcelas" type="number" value="1" /></label>
+
+<label>Data do Vencimento <input id="vencimento" type="date" /></label>
 </div>
 
 <div class="box" style="text-align:center;">
-  <button onclick="enviarWebhook()">📤 Enviar para o Sistema</button>
-  <button onclick="imprimirComprovante()">📄 Compartilhar / Imprimir</button>
+  <button id="btnEnviar" onclick="enviarWebhook()">📤 Enviar para o Sistema</button>
+ <button id="btnComprovante" onclick="imprimirComprovante()" disabled>
+📄 Compartilhar / Imprimir
+</button>
+
+<button id="btnNovaVenda" onclick="novaVenda()">
+  🆕 Nova Venda
+</button>
+
 </div>
 
 <script>
 let total = 0;
 const WEBHOOK_URL ="https://n8n.vps6993.panel.icontainer.net/webhook/MEIRELLES-CADASTRO";
 function $(id){ return document.getElementById(id); }
+let enviadoSistema = false;
+let enviandoAgora = false;	
 
 function adicionarProduto(){
   const select = $('produto');
@@ -253,7 +265,7 @@ function atualizarTotal(){
       p.id = 'desconto';
       p.style.color = '#FFD700'; // dourado
       p.style.textAlign = 'right';
-      $('valorTotal').parentElement.insertBefore(p, $('valorTotal').parentElement.firstChild);
+      $('valorTotal').parentElement.before(p);
     }
     $('desconto').innerText = `Desconto à vista: R$ ${descontoAvista.toFixed(2)}`;
   } else if($('desconto')){
@@ -272,33 +284,81 @@ $('quantidade').addEventListener('input', atualizarTotal);
 $('forma').addEventListener('change', atualizarTotal);
 
 function enviarWebhook(){
+
+// 🛑 CAMPOS OBRIGATÓRIOS
+const obrigatorios = [
+  'nome',
+  'cpf',
+  'telefone',
+  'cep',
+  'rua',
+  'bairro',
+  'cidade',
+  'endereco'
+];
+
+for (let id of obrigatorios) {
+  const campo = $(id);
+
+  if (!campo.value.trim()) {
+    alert(`Preencha o campo: ${campo.previousElementSibling?.innerText || id}`);
+    campo.focus();
+    return;
+  }
+}
+
+
+if (enviandoAgora) {	
+  alert('Aguarde, envio em andamento...');
+  return;
+}
+
+  // 🧱 TRAVA: não deixa enviar duas vezes
+  if (enviadoSistema) {
+    alert('Esta venda já foi enviada.');
+    return;
+  }
+
+// 🛑 TRAVA: exige ao menos 1 produto
+  if (!document.querySelector('#lista tr')) {
+    alert('Adicione ao menos um produto.');
+    return;
+
+  }
+
+if (!$('vencimento').value) {
+  alert('Informe a data de vencimento.');
+  return;
+}
+
   const itens = [];
   document.querySelectorAll('#lista tr').forEach(tr => {
     const tds = tr.querySelectorAll('td');
     itens.push({
       produto: tds[0].innerText,
       quantidade: Number(tds[1].innerText),
-      preco: Number(tds[2].innerText.replace('R$','')),
-      total: Number(tds[3].innerText.replace('R$',''))
+      preco: Number(tds[2].innerText.replace('R$','').trim()),
+      total: Number(tds[3].innerText.replace('R$','').trim())
     });
   });
 
-  const parcelasQtd = Number($('parcelas').value || 1);
-  const dia = Number($('vencimento').value || 1);
+  let parcelasQtd = Number($('parcelas').value || 1);
+if (parcelasQtd < 1) parcelasQtd = 1;
+   const dia = $('vencimento').value;
   const valorLiquido = Number($('valorTotal').innerText);
   const valorParcela = valorLiquido / parcelasQtd;
 
-  const parcelasArray = [];
-  const hoje = new Date();
-  for (let i = 0; i < parcelasQtd; i++) {
-    const d = new Date(hoje);
-    d.setMonth(d.getMonth() + i + 1);
-    d.setDate(dia);
-    parcelasArray.push({
-      numero: i + 1,
-      valor: valorParcela.toFixed(2),
-      vencimento: d.toISOString().split('T')[0]
-    });
+ const parcelasArray = [];
+const base = new Date(dia);
+
+for (let i = 0; i < parcelasQtd; i++) {
+  const d = new Date(base);
+  d.setMonth(d.getMonth() + i);
+  parcelasArray.push({
+    numero: i + 1,
+    valor: valorParcela.toFixed(2),
+    vencimento: d.toISOString().split('T')[0]
+  });
   }
 
   const payload = {
@@ -320,18 +380,40 @@ function enviarWebhook(){
     status: valorLiquido === 0 ? 'pago' : 'pendente',
     parcelamento: parcelasArray
   };
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  enviandoAgora = true;
 
   fetch(WEBHOOK_URL,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  })
-  .then(()=>alert('Venda enviada com sucesso!'))
-  .catch(e=>alert('Erro: '+e));
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify(payload)
+})
+.then(res => {
+  if (!res.ok) throw new Error('Falha no envio');
+  return res.text();
+})
+.then(() => {
+  enviadoSistema = true;
+  enviandoAgora = false; 
+  alert('Venda enviada com sucesso!');
+  document.getElementById('btnComprovante').disabled = false;
+  document.getElementById('btnEnviar').disabled = true;
+})
+
+.catch(e => {
+  enviandoAgora = false;
+  btn.disabled = false;
+  alert('Erro: ' + e.message);
+});
 }
 
 // Função de comprovante com logo grande e cores
 function imprimirComprovante(){
+ if(!enviadoSistema){
+    alert('Envie a venda antes de imprimir o comprovante.');
+    return;
+  }
     const comprovanteDiv = document.createElement('div');
     comprovanteDiv.className = "comprovante";
 
@@ -384,9 +466,10 @@ function imprimirComprovante(){
       <p style="text-align:right; margin-top:5px;"><strong>Entrada:</strong> R$ ${$('entrada').value}</p>
       ${$('desconto') ? `<p style="text-align:right; color:#FFD700;"><strong>${$('desconto').innerText}</strong></p>` : ''}
       <p style="text-align:right;"><strong>Total:</strong> R$ ${$('valorTotal').innerText}</p>
-      <p style="text-align:right;"><strong>Parcelamento:</strong> ${$('parcelas').value}x de R$ ${(Number($('valorTotal').innerText)/Number($('parcelas').value)).toFixed(2)}</p>
-      <p style="text-align:right;"><strong>Vencimento:</strong> Todo dia ${$('vencimento').value}</p>
-      <p style="text-align:right;"><strong>Forma de Pagamento:</strong> ${$('forma').value}</p>
+      <p style="text-align:right;"><strong>Parcelamento:</strong> ${$('parcelas').value}x de R$ ${(Number($('valorTotal').innerText)/(Number($('parcelas').value) || 1)).toFixed(2)}
+</p>
+      <p style="text-align:right;"><strong>Vencimento:</strong> ${$('vencimento').value}</p>
+      <p style="text-align:right;"><strong>Forma de Pagamento:</strong> ${$('forma').options[$('forma').selectedIndex].text}</p>
       <p style="text-align:center; font-style:italic; margin-top:10px;">Obrigado pela preferência!</p>
     `;
 
@@ -420,8 +503,47 @@ $('cep').addEventListener('blur', function () {
     })
     .catch(() => alert('Erro ao buscar o CEP'));
 });
+
+function novaVenda(){
+
+  if(!confirm('Deseja iniciar uma nova venda?')) return;
+
+  // Limpa campos do cliente
+  ['nome','cpf','telefone','trabalho','cep','rua','bairro','cidade','endereco'].forEach(id=>{
+    $(id).value = '';
+  });
+
+  // Limpa produtos
+  document.getElementById('lista').innerHTML = '';
+  total = 0;
+
+  // Reseta pagamento
+  $('entrada').value = 0;
+  $('parcelas').value = 1;
+  $('forma').value = 'avista';
+  $('vencimento').value = '';
+
+  // Remove desconto se existir
+  if($('desconto')) $('desconto').remove();
+
+  // Zera totais
+  $('valorTotal').innerText = '0.00';
+  $('entradaResumo').innerText = '0.00';
+  $('valorParcelas').innerText = '1x de R$ 0.00';
+
+  // Reseta flags
+  enviadoSistema = false;
+  enviandoAgora = false;
+
+  // Botões
+  document.getElementById('btnComprovante').disabled = true;
+  document.getElementById('btnEnviar').disabled = false;
+
+  alert('Nova venda iniciada ✅');
+  $('nome').focus();
+}
+
 </script>
 
 </body>
 </html>
-

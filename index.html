@@ -342,6 +342,11 @@ if (!$('vencimento').value) {
     });
   });
 
+// Criar resumo dos produtos em formato texto
+const resumoItens = itens.map(item => {
+  return `${item.produto} - ${item.quantidade}x R$${item.preco}`;
+}).join('\n');
+
   let parcelasQtd = Number($('parcelas').value || 1);
 if (parcelasQtd < 1) parcelasQtd = 1;
    const dia = $('vencimento').value;
@@ -372,6 +377,7 @@ for (let i = 0; i < parcelasQtd; i++) {
     cidade: $('cidade').value,
     endereco: $('endereco').value,
     itens,
+    resumo: resumoItens,
     valor_total: valorLiquido,
     entrada: Number($('entrada').value),
     parcelas: parcelasQtd,
@@ -547,4 +553,3 @@ function novaVenda(){
 
 </body>
 </html>
-

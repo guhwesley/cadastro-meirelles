@@ -218,18 +218,41 @@ function adicionarProduto(){
   const preco = Number(select.options[select.selectedIndex].dataset.preco);
   const qtd = Number($('quantidade').value);
   if(!preco) return alert('Selecione um produto');
-  const subtotal = preco * qtd;
-  total += subtotal;
 
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td>${nome}</td>
-    <td>${qtd}</td>
-    <td>R$ ${preco}</td>
-    <td>R$ ${subtotal}</td>
-    <td><button onclick="remover(this, ${subtotal})">X</button></td>
-  `;
-  $('lista').appendChild(tr);
+  // Verificar se o produto já existe na tabela
+  const linhas = document.querySelectorAll('#lista tr');
+  let produtoExistente = null;
+  linhas.forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds[0].innerText === nome) {
+      produtoExistente = tr;
+    }
+  });
+
+  if (produtoExistente) {
+    // Somar quantidade e atualizar subtotal
+    const tds = produtoExistente.querySelectorAll('td');
+    const novaQtd = Number(tds[1].innerText) + qtd;
+    const novoSubtotal = preco * novaQtd;
+    tds[1].innerText = novaQtd;
+    tds[3].innerText = `R$ ${novoSubtotal}`;
+    total += preco * qtd; // atualizar total
+  } else {
+    // Adicionar nova linha
+    const subtotal = preco * qtd;
+    total += subtotal;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${nome}</td>
+      <td>${qtd}</td>
+      <td>R$ ${preco}</td>
+      <td>R$ ${subtotal}</td>
+      <td><button onclick="remover(this, ${subtotal})">X</button></td>
+    `;
+    $('lista').appendChild(tr);
+  }
+
   atualizarTotal();
   $('quantidade').value = 1;
   select.selectedIndex = 0;
@@ -344,7 +367,8 @@ if (!$('vencimento').value) {
 
 // Criar resumo dos produtos em formato texto
 const resumoItens = itens.map(item => {
-  return `${item.produto} - ${item.quantidade}x R$${item.preco}`;
+  const subtotal = (item.preco * item.quantidade).toFixed(2);
+  return `R$ ${item.preco.toFixed(2)} ${item.produto} x ${item.quantidade} = (R$ ${subtotal})`;
 }).join('\n');
 
   let parcelasQtd = Number($('parcelas').value || 1);
